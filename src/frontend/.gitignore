@@ -44,3 +44,7 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 .angular
+
+# Ignore VSCode History plugin folders
+.history/
+**/.history/
