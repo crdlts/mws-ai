@@ -1,0 +1,45 @@
+{
+  "tool": "gitleaks",
+  "report": {
+    "version": "2.1.0",
+    "runs": [
+      {
+        "tool": {
+          "driver": {
+            "name": "gitleaks",
+            "rules": [
+              {
+                "id": "aws-access-key",
+                "name": "AWS Access Key"
+              }
+            ]
+          }
+        },
+        "results": [
+          {
+            "ruleId": "aws-access-key",
+            "level": "error",
+            "message": {
+              "text": "AKIAIOSFODNN7EXAMPLE"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "src/tests/examples/mock_config.py"
+                  },
+                  "region": {
+                    "startLine": 15,
+                    "snippet": {
+                      "text": "# todo fixme dummy example fake test_key sample placeholder"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -30,6 +30,10 @@ class Finding(BaseModel):
         le=1.0,
         description="Уверенность модели/системы (0..1).",
     )
+
+    fp_score: float
+    reasons: List[str] = []
+
     ai_verdict: Optional[str] = Field(
         default=None,
         description="Текстовое объяснение от AI/эвристик.",
