@@ -4,8 +4,9 @@
   "license": "MIT",
   "scripts": {
     "start": "nx serve",
-    "build": "nx build",
-    "test": "nx test"
+    "build": "ng build --prod",
+    "test": "nx test",
+    "deploy": "gh-pages -d dist/frontend"
   },
   "private": true,
   "dependencies": {
