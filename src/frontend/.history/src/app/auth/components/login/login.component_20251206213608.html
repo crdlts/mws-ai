@@ -1,6 +1,7 @@
 <div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
+      <a routerLink="/register" class="register-link">Регистрация</a>
       <div class="auth-badge">
         <span class="auth-badge-dot"></span>
         Secure secret analysis
@@ -11,7 +12,9 @@
         <span class="title-text">Secret Audit</span>
       </div>
 
-      <p class="auth-subtitle">Регистрация новой учетной записи.</p>
+      <p class="auth-subtitle">
+        Вход в панель анализа ложных срабатываний и ключей.
+      </p>
     </div>
 
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
@@ -34,21 +37,7 @@
             id="password"
             type="password"
             formControlName="password"
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="confirmPassword"
-          >Подтверждение пароля</label
-        >
-        <div class="field-input">
-          <input
-            id="confirmPassword"
-            type="password"
-            formControlName="confirmPassword"
-            placeholder="••••••••"
+            placeholder="123ABC"
           />
         </div>
       </div>
@@ -59,12 +48,14 @@
           class="auth-button"
           [disabled]="form.invalid || isSubmitting"
         >
-          <span>Зарегистрироваться</span>
+          <span>Войти в панель</span>
         </button>
 
         <div class="auth-meta">
           <span>Только для DevSecOps команды</span>
-          <a routerLink="/login" href="login">Уже есть аккаунт?</a>
+          <div class="auth-links">
+            <a href="#">Забыли пароль?</a>
+          </div>
         </div>
       </div>
     </form>
