@@ -85,15 +85,6 @@
         "port": 4200,
         "spa": true
       }
-    },
-    "deploy": {
-      "executor": "angular-cli-ghpages:deploy",
-      "options": {
-        "baseHref": "/",
-        "repo": "https://github.com/crdlts/mws-ai.git",
-        "name": "Mikhail Iglovskiy",
-        "email": "sir.mike.it@gmail.com"
-      }
     }
   }
 }

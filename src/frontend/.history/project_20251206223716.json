@@ -87,7 +87,7 @@
       }
     },
     "deploy": {
-      "executor": "angular-cli-ghpages:deploy",
+      "executor": "angular-cli-ghpages:deplo",
       "options": {
         "baseHref": "/",
         "repo": "https://github.com/crdlts/mws-ai.git",
