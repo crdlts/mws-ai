@@ -1,92 +1,79 @@
-# orchestrator/app/pipeline.py
-
-import logging
 from typing import Any, Dict, List
 
 from .models import Task
 from .storage import storage
-from .clients import moderator_client
-
-logger = logging.getLogger(__name__)
+from .clients import moderator_client, report_injestor_client
 
 
 async def run_pipeline_for_task(task: Task) -> None:
-    logger.info("Start pipeline for task %s", task.id)
     task.set_status("in_progress")
     storage.update(task)
 
     try:
-        # 1) Берём SARIF-отчёт от сканера (то, что пришло в request.report)
-        sarif: Dict[str, Any] = task.request_payload or {}
-        runs: List[Dict[str, Any]] = sarif.get("runs", [])
+        # 1) Берём сырой отчёт от сканера (SARIF/JSON), который прилетел в /api/analyze
+        raw_report: Dict[str, Any] = task.request_payload or {}
 
-        # ---------- НОРМАЛИЗАЦИЯ ДЛЯ МОДЕРАТОРА ----------
+        # 2) Отдаём сырой отчёт в report_injestor, чтобы он его нормализовал
+        normalized = await report_injestor_client.normalize(raw_report)
+
+        # 3) Преобразуем нормализованные фичи в формат, который ожидает модератор
+        normalized_findings: List[Dict[str, Any]] = normalized.get("findings", [])
         moderator_findings: List[Dict[str, Any]] = []
 
-        for run_idx, run in enumerate(runs):
-            driver = (run.get("tool") or {}).get("driver") or {}
-            rules = {r["id"]: r for r in driver.get("rules", [])}
+        for idx, f in enumerate(normalized_findings):
+            finding_id = str(idx)
+            meta = f.get("metadata") or {}
 
-            for res_idx, res in enumerate(run.get("results", [])):
-                rule_id = res.get("ruleId")
-                rule = rules.get(rule_id, {})
+            moderator_findings.append(
+                {
+                    "id": finding_id,
+                    "path": f.get("file_path"),
+                    "line": f.get("line"),
+                    "key": None,  # пока не из чего брать
+                    "value": f.get("message"),
+                    # БЕРЁМ snippet ИЗ metadata вместо пустой строки
+                    "context": meta.get("snippet") or "",
+                    "extra": {
+                        "rule_id": f.get("rule_id"),
+                        "scanner": f.get("scanner"),
+                        "severity": f.get("severity"),
+                        "rule_name": meta.get("rule_name"),
+                    },
+                }
+            )
 
-                message = (res.get("message") or {}).get("text")
-
-                locations = res.get("locations") or []
-                loc0 = locations[0] if locations else {}
-                physical = loc0.get("physicalLocation", {})
-                artifact = physical.get("artifactLocation", {})
-                region = physical.get("region", {})
-
-                file_path = artifact.get("uri")
-                line = region.get("startLine")
-                snippet = (region.get("snippet") or {}).get("text")
-
-                finding_id = f"{run_idx}:{res_idx}"
-
-                moderator_findings.append(
-                    {
-                        "id": finding_id,
-                        "path": file_path,
-                        "line": line,
-                        "key": None,
-                        "value": message,
-                        "context": snippet,
-                        "extra": {
-                            "rule_id": rule_id,
-                            "rule_name": rule.get("name"),
-                        },
-                    }
-                )
-
-        logger.info("Normalized %d findings for moderator", len(moderator_findings))
-
-        # ---------- ВЫЗОВ МОДЕРАТОРА ----------
+        # 4) Вызываем модератор
         moderator_payload: Dict[str, Any] = {
-            "source": task.source,          # "gitleaks"
+            # если report_injestor вернул source — можем использовать его;
+            # иначе оставим старый task.source (например 'gitleaks', 'semgrep' и т.п.)
+            "source": normalized.get("source") or task.source,
             "findings": moderator_findings,
         }
 
-        logger.info("Calling moderator with payload=%s", moderator_payload)
         moderation = await moderator_client.analyze(moderator_payload)
-        logger.info("Moderator response: %s", moderation)
 
-        # ---------- СБОРКА ФОРМАТА ДЛЯ ОТВЕТА API ----------
+        # 5) Собираем ответ для API
         results = moderation.get("results", [])
         mod_by_id = {r["id"]: r for r in results}
 
         api_findings: List[Dict[str, Any]] = []
         for f in moderator_findings:
             mod = mod_by_id.get(f["id"], {})
+
+            fp_score = float(mod.get("fp_score", 0.0))
+            reasons = mod.get("reasons", []) or []
+
             api_findings.append(
                 {
                     "rule_id": f["extra"]["rule_id"],
                     "file_path": f["path"],
                     "secret_snippet": f["context"] or f["value"],
                     "is_false_positive": bool(mod.get("is_false_positive", False)),
-                    # можно интерпретировать как «насколько уверен, что это TP»
-                    "confidence": float(1.0 - mod.get("fp_score", 0.0)),
+                    # «насколько уверен, что это TP»
+                    "confidence": float(1.0 - fp_score),
+                    "fp_score": fp_score,
+                    "reasons": reasons,
+                    "ai_verdict": None,  # на будущее под LLM
                     "original_location": {
                         "path": f["path"],
                         "line": f["line"],
@@ -94,17 +81,15 @@ async def run_pipeline_for_task(task: Task) -> None:
                 }
             )
 
-        # ---------- СОХРАНЯЕМ РЕЗУЛЬТАТ ЗАДАЧИ ----------
+        # 6) Сохраняем результат
         task.result = {
             "findings": api_findings,
-            "stats": None,   # тут потом можно посчитать агрегаты
+            "stats": None,   # здесь потом можно посчитать агрегаты
         }
         task.set_status("completed")
         storage.update(task)
-        logger.info("Pipeline for task %s completed", task.id)
 
     except Exception as exc:  # noqa: BLE001
-        logger.exception("Pipeline failed for task %s", task.id)
         task.error = str(exc)
         task.set_status("failed")
         storage.update(task)
