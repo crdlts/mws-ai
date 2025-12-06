@@ -9,13 +9,6 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'register',
-    loadComponent: () =>
-      import('./auth/components/register/register.component').then(
-        (m) => m.RegisterComponent
-      ),
-  },
-  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'login',

@@ -1,0 +1,77 @@
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-badge">
+        <span class="auth-badge-dot"></span>
+        Secure secret analysis
+      </div>
+
+      <div class="auth-title">
+        <span class="logo-mark">S</span>
+        <span class="title-text">Secret Audit</span>
+      </div>
+
+      <p class="auth-subtitle">Регистрация новой учетной записи.</p>
+    </div>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label class="field-label" for="email">E-mail</label>
+        <div class="field-input">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="devsecops@company.com"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">Пароль</label>
+        <div class="field-input">
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="••••••••"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="confirmPassword"
+          >Подтверждение пароля</label
+        >
+        <div class="field-input">
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            placeholder="••••••••"
+          />
+        </div>
+      </div>
+
+      <div class="auth-actions">
+        <button
+          type="submit"
+          class="auth-button"
+          [disabled]="form.invalid || isSubmitting"
+        >
+          <span>Зарегистрироваться</span>
+        </button>
+
+        <div class="auth-meta">
+          <span>Только для DevSecOps команды</span>
+          <a routerLink="/login">Уже есть аккаунт?</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="auth-footer">
+      <span>v0.1 • internal</span>
+      <span class="tag">audit · moderator · orchestrator</span>
+    </div>
+  </div>
+</div>
