@@ -1,21 +1,23 @@
-<div class="header-container">
+<div class="header-container" [class.kiosk-mode]="isKioskMode">
+  <!-- Background overlay -->
+  <div
+    class="search-overlay"
+    [class.visible]="isSearchPanelOpen"
+  ></div>
+
   <!-- Left home icon -->
   <a routerLink="/dashboard" href="dashboard" class="home-icon-link">
-    <img
-      src="/detectiveWhaleIcon.png"
-      alt="Home"
-      class="home-icon-image"
-    />
+    <img src="/detectiveWhaleIcon.png" alt="Home" class="home-icon-image" />
   </a>
 
   <!-- Search bar -->
-  <div class="search-container">
+  <div class="search-container" [class.expanded]="isSearchPanelOpen" (click)="openSearchPanel($event)">
     <div class="search-input-wrapper">
       <input
         type="text"
         class="search-input"
         placeholder="Search or jump to"
-        (click)="openSearchPanel()"
+        (click)="$event.stopPropagation()"
         (focus)="openSearchPanel()"
       />
       <svg
@@ -34,18 +36,15 @@
         />
       </svg>
     </div>
-    
+
     <!-- Search dropdown -->
-    <div 
-      class="search-dropdown" 
+    <div
+      class="search-dropdown"
       [class.open]="isSearchPanelOpen"
       (click)="$event.stopPropagation()"
     >
       <!-- Search dropdown content -->
-      <div 
-        #searchModal
-        class="search-dropdown-content"
-      >
+      <div #searchModal class="search-dropdown-content">
         <div class="search-dropdown-inner">
           <!-- Recent dashboards section -->
           <div class="search-section">
@@ -54,7 +53,7 @@
               <span>B2B Витрина предодобов</span>
             </a>
           </div>
-          
+
           <!-- Pages section -->
           <div class="search-section">
             <div class="search-section-title">Pages</div>
@@ -83,7 +82,7 @@
               <span>Игловский Михаил Александрович</span>
             </a>
           </div>
-          
+
           <!-- Preferences section -->
           <div class="search-section">
             <div class="search-section-title">Preferences</div>
@@ -96,8 +95,16 @@
     </div>
   </div>
 
-  <!-- Right user avatar dropdown -->
-  <div class="user-dropdown-container">
+  <!-- Right header controls -->
+  <div class="header-controls-container">
+    <!-- Kiosk mode button -->
+    <button class="kiosk-mode-button" aria-label="Enable kiosk mode" (click)="toggleKioskMode()">
+      <svg  viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+        <path d="M19,2H5A3,3,0,0,0,2,5V15a3,3,0,0,0,3,3H7.64l-.58,1a2,2,0,0,0,0,2,2,2,0,0,0,1.75,1h6.46A2,2,0,0,0,17,21a2,2,0,0,0,0-2l-.59-1H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2ZM8.77,20,10,18H14l1.2,2ZM20,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V14H20Zm0-3H4V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z"></path>
+      </svg>
+    </button>
+
+    <!-- User dropdown toggle -->
     <button
       #userDropdownToggle
       class="user-dropdown-toggle"
@@ -128,11 +135,7 @@
     </button>
 
     <!-- User panel -->
-    <div
-      #userPanel
-      class="user-panel"
-      [class.open]="isUserPanelOpen"
-    >
+    <div #userPanel class="user-panel" [class.open]="isUserPanelOpen">
       <ul class="user-panel-list">
         <li class="current-user">
           <a class="user-profile-link" href="#">
@@ -158,9 +161,26 @@
         <li class="divider"></li>
 
         <li>
-          <a class="user-panel-link sign-out-link" href="#">Sign out</a>
+          <a class="user-panel-link sign-out-link" href="login">Sign out</a>
         </li>
       </ul>
     </div>
+  </div>
+</div>
+
+<!-- Kiosk mode notification popup -->
+<div class="kiosk-notification" [class.show]="isKioskNotificationVisible">
+  <div class="kiosk-notification-content">
+    <svg class="notification-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="notification-text">Press ESC to exit kiosk mode</span>
+    <button class="close-button" (click)="hideKioskNotification()" aria-label="Close notification">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </div>
