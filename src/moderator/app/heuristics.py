@@ -1,30 +1,11 @@
 import math
 from collections import Counter
 from typing import List
-
 from .schemas import Finding, ModerationResult
 
-
-TEST_PATH_MARKERS = [
-    "/test/",
-    "/tests/",
-    "/mock/",
-    "/mocks/",
-    "/example/",
-    "/examples/"
-]
-
-FAKE_KEYWAORD = [
-    "example",
-    "fake",
-    "test_key",
-    "dummy",
-    "sample",
-    "placeholder"
-]
-
+TEST_PATH_MARKERS = ["/test/", "/tests/", "/mock/", "/mocks/", "/example/", "/examples/"]
+FAKE_KEYWAORD = ["example", "fake", "test_key", "dummy", "sample", "placeholder"]
 COMMENT_MARKERS = ["todo", "fixme"]
-
 
 def shannon_entropy(s: str) -> float:
     if not s:
@@ -32,7 +13,6 @@ def shannon_entropy(s: str) -> float:
     count = Counter(s)
     n = len(s)
     return -sum((c / n) * math.log2(c / n) for c in count.values())
-
 
 def evaluate_finding(f: Finding) -> ModerationResult:
     score = 0.0
@@ -47,13 +27,13 @@ def evaluate_finding(f: Finding) -> ModerationResult:
     if any(k in key for k in FAKE_KEYWAORD):
         score += 0.4
         reasons.append("key_looks_fake_or_example")
-    
+
     value = f.value or ""
     ent = shannon_entropy(value)
-    if value and ent < 3.0: # Порог нужно еще подбирать
+    if value and ent < 3.0:
         score += 0.3
         reasons.append(f"low_entropy_{ent:.2f}")
-    
+
     ctx = (f.context or "").lower()
     if any(marker in ctx for marker in COMMENT_MARKERS):
         score += 0.2
@@ -62,7 +42,7 @@ def evaluate_finding(f: Finding) -> ModerationResult:
     if score > 1.0:
         score = 1.0
 
-    is_fp = score >= 0.5 # Тоже нужно подбирать
+    is_fp = score >= 0.5
 
     return ModerationResult(
         id=f.id,
