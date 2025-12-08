@@ -16,12 +16,19 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./dashboard/components/main-page/main-page.component').then(
+        (m) => m.MainPageComponent
+      ),
+  },
+  {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login',
+    redirectTo: 'dashboard',
   },
   {
     path: '**',
-    redirectTo: 'login',
+    redirectTo: 'dashboard',
   },
 ];
