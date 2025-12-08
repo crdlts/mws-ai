@@ -6,23 +6,29 @@ import { RouterLink } from '@angular/router';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.less'],
   standalone: true,
-  imports: [RouterLink]
+  imports: [RouterLink],
 })
 export class HeaderComponent {
   isUserPanelOpen = false;
   isSearchPanelOpen = false;
+  isKioskMode = false;
+  isKioskNotificationVisible = false;
+  private kioskNotificationTimeout: any;
 
   @ViewChild('userPanel') userPanel!: ElementRef;
   @ViewChild('userDropdownToggle') userDropdownToggle!: ElementRef;
   @ViewChild('searchModal') searchModal!: ElementRef;
 
-  constructor() { }
+  constructor() {}
 
   toggleUserPanel(): void {
     this.isUserPanelOpen = !this.isUserPanelOpen;
   }
 
-  openSearchPanel(): void {
+  openSearchPanel(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.isSearchPanelOpen = true;
   }
 
@@ -30,12 +36,63 @@ export class HeaderComponent {
     this.isSearchPanelOpen = false;
   }
 
+  toggleKioskMode(): void {
+    this.isKioskMode = !this.isKioskMode;
+    
+    if (this.isKioskMode) {
+      // Enter kiosk mode
+      // Notification will be shown after a short delay to ensure kiosk mode is fully activated
+      setTimeout(() => {
+        this.showKioskNotification();
+      }, 100);
+    } else {
+      // Exit kiosk mode
+      this.hideKioskNotification();
+    }
+  }
+
+  showKioskNotification(): void {
+    // Clear any existing timeout
+    if (this.kioskNotificationTimeout) {
+      clearTimeout(this.kioskNotificationTimeout);
+    }
+    
+    // Show the notification
+    this.isKioskNotificationVisible = true;
+    
+    // Hide the notification after 3 seconds
+    this.kioskNotificationTimeout = setTimeout(() => {
+      this.hideKioskNotification();
+    }, 3000);
+  }
+
+  hideKioskNotification(): void {
+    this.isKioskNotificationVisible = false;
+    
+    // Clear any existing timeout
+    if (this.kioskNotificationTimeout) {
+      clearTimeout(this.kioskNotificationTimeout);
+      this.kioskNotificationTimeout = null;
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    // Close search panel if window is resized to prevent layout issues
+    if (this.isSearchPanelOpen) {
+      this.closeSearchPanel();
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event): void {
     // Handle user panel click outside
     if (this.isUserPanelOpen) {
-      const clickedInsideUserPanel = this.userPanel?.nativeElement.contains(event.target);
-      const clickedInsideUserToggle = this.userDropdownToggle?.nativeElement.contains(event.target);
+      const clickedInsideUserPanel = this.userPanel?.nativeElement.contains(
+        event.target
+      );
+      const clickedInsideUserToggle =
+        this.userDropdownToggle?.nativeElement.contains(event.target);
 
       if (!clickedInsideUserPanel && !clickedInsideUserToggle) {
         this.isUserPanelOpen = false;
@@ -44,12 +101,13 @@ export class HeaderComponent {
 
     // Handle search panel click outside
     if (this.isSearchPanelOpen) {
-      const clickedInsideSearchDropdown = this.searchModal?.nativeElement.contains(event.target);
-      const clickedOnSearchInput = event.target instanceof Element && 
-        event.target.closest('.search-input-wrapper') !== null;
+      const searchContainer = document.querySelector('.search-container');
+      const clickedInsideSearchContainer = 
+        searchContainer && event.target instanceof Node && 
+        searchContainer.contains(event.target);
 
-      // Close search panel if click is outside dropdown and not on search input
-      if (!clickedInsideSearchDropdown && !clickedOnSearchInput) {
+      // Close search panel if click is outside the entire search container
+      if (!clickedInsideSearchContainer) {
         this.closeSearchPanel();
       }
     }
@@ -59,6 +117,16 @@ export class HeaderComponent {
   onEscapeKey(): void {
     if (this.isSearchPanelOpen) {
       this.closeSearchPanel();
+    }
+    
+    // Exit kiosk mode if active
+    if (this.isKioskMode) {
+      this.toggleKioskMode();
+    }
+    
+    // Hide kiosk notification if visible
+    if (this.isKioskNotificationVisible) {
+      this.hideKioskNotification();
     }
   }
 }
