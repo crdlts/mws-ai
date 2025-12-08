@@ -1,0 +1,166 @@
+<div class="header-container">
+  <!-- Left home icon -->
+  <a routerLink="/dashboard" href="dashboard" class="home-icon-link">
+    <img
+      src="/detectiveWhaleIcon.png"
+      alt="Home"
+      class="home-icon-image"
+    />
+  </a>
+
+  <!-- Search bar -->
+  <div class="search-container">
+    <div class="search-input-wrapper">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search or jump to"
+        (click)="openSearchPanel()"
+        (focus)="openSearchPanel()"
+      />
+      <svg
+        class="search-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M14 14L11 11M11 11C11.7272 10.2728 12.2346 9.35321 12.4578 8.33333C12.6811 7.31345 12.6119 6.23248 12.259 5.20245C11.9061 4.17242 11.2853 3.22949 10.4645 2.47669C9.64375 1.72389 8.65559 1.19116 7.61111 1.00049C6.56664 0.809825 5.50405 1.00211 4.54128 1.53903C3.57851 2.07595 2.75621 2.90212 2.21704 3.87469C1.67787 4.84726 1.47287 5.92455 1.62679 7.00049C1.78071 8.07643 2.28659 9.07623 3.07669 9.86633C3.86679 10.6564 4.86659 11.1623 5.94253 11.3162C7.01847 11.4701 8.09576 11.2651 9.06833 10.7259C9.79653 10.3214 10.4289 9.76479 10.92 9.09999"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    
+    <!-- Search dropdown -->
+    <div 
+      class="search-dropdown" 
+      [class.open]="isSearchPanelOpen"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Search dropdown content -->
+      <div 
+        #searchModal
+        class="search-dropdown-content"
+      >
+        <div class="search-dropdown-inner">
+          <!-- Recent dashboards section -->
+          <div class="search-section">
+            <div class="search-section-title">Recent dashboards</div>
+            <a href="/dashboard/b2b-vitrina-predodobov" class="search-item">
+              <span>B2B Витрина предодобов</span>
+            </a>
+          </div>
+          
+          <!-- Pages section -->
+          <div class="search-section">
+            <div class="search-section-title">Pages</div>
+            <a href="/dashboard" class="search-item">
+              <span>Home</span>
+            </a>
+            <a href="/bookmarks" class="search-item">
+              <span>Bookmarks</span>
+            </a>
+            <a href="/dashboards/starred" class="search-item">
+              <span>Starred</span>
+            </a>
+            <a href="/dashboards" class="search-item">
+              <span>Dashboards</span>
+            </a>
+            <a href="/explore" class="search-item">
+              <span>Explore</span>
+            </a>
+            <a href="/drilldown" class="search-item">
+              <span>Drilldown</span>
+            </a>
+            <a href="/admin" class="search-item">
+              <span>Administration</span>
+            </a>
+            <a href="/profile" class="search-item">
+              <span>Игловский Михаил Александрович</span>
+            </a>
+          </div>
+          
+          <!-- Preferences section -->
+          <div class="search-section">
+            <div class="search-section-title">Preferences</div>
+            <div class="search-item">
+              <span>Change theme...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right user avatar dropdown -->
+  <div class="user-dropdown-container">
+    <button
+      #userDropdownToggle
+      class="user-dropdown-toggle"
+      (click)="toggleUserPanel()"
+      [attr.aria-expanded]="isUserPanelOpen"
+    >
+      <!-- User avatar -->
+      <div class="user-avatar">
+        <div class="avatar-initials">MI</div>
+      </div>
+
+      <!-- Chevron icon -->
+      <svg
+        class="caret-down"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M4 6L8 10L12 6"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
+    <!-- User panel -->
+    <div
+      #userPanel
+      class="user-panel"
+      [class.open]="isUserPanelOpen"
+    >
+      <ul class="user-panel-list">
+        <li class="current-user">
+          <a class="user-profile-link" href="#">
+            <div class="user-full-name">Игловский Михаил Александрович</div>
+            <div class="user-username">@m.iglovskiy</div>
+          </a>
+        </li>
+
+        <li class="divider"></li>
+
+        <li>
+          <a class="user-panel-link" href="#">Set status</a>
+        </li>
+
+        <li>
+          <a class="user-panel-link" href="#">Edit profile</a>
+        </li>
+
+        <li>
+          <a class="user-panel-link" href="#">Preferences</a>
+        </li>
+
+        <li class="divider"></li>
+
+        <li>
+          <a class="user-panel-link sign-out-link" href="#">Sign out</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
