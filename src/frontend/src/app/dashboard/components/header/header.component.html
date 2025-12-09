@@ -1,9 +1,9 @@
-<div class="header-container" [class.kiosk-mode]="kioskModeService.isKioskMode()">
+<div
+  class="header-container"
+  [class.kiosk-mode]="kioskModeService.isKioskMode()"
+>
   <!-- Background overlay -->
-  <div
-    class="search-overlay"
-    [class.visible]="isSearchPanelOpen"
-  ></div>
+  <div class="search-overlay" [class.visible]="isSearchPanelOpen"></div>
 
   <!-- Left home icon -->
   <a routerLink="/dashboard" href="dashboard" class="home-icon-link">
@@ -11,7 +11,11 @@
   </a>
 
   <!-- Search bar -->
-  <div class="search-container" [class.expanded]="isSearchPanelOpen" (click)="openSearchPanel($event)">
+  <div
+    class="search-container"
+    [class.expanded]="isSearchPanelOpen"
+    (click)="openSearchPanel($event)"
+  >
     <div class="search-input-wrapper">
       <input
         type="text"
@@ -97,10 +101,84 @@
 
   <!-- Right header controls -->
   <div class="header-controls-container">
+    <!-- New dropdown toggle -->
+    <button
+      class="new-dropdown-toggle"
+      (click)="toggleNewPanel()"
+      [attr.aria-expanded]="isNewPanelOpen"
+    >
+      <div class="plus-icon-container">
+        <svg viewBox="0 0 24 24" class="icon-plus">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <svg
+        class="caret-down"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M4 6L8 10L12 6"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+
+      <!-- New panel -->
+      <div class="new-panel" [class.open]="isNewPanelOpen">
+        <ul class="new-panel-list">
+          <li>
+            <a class="new-panel-link" href="#">Create with GitIntegration</a>
+          </li>
+          <li>
+            <a class="new-panel-link" href="#">Create with Code</a>
+          </li>
+          <li>
+            <a class="new-panel-link" href="#">Create with Json</a>
+          </li>
+        </ul>
+      </div>
+    </button>
+
+    <!-- Notifications dropdown toggle -->
+    <button
+      class="header-inform-dropdown-toggle"
+      aria-label="Notifications"
+      (click)="toggleNotificationsPanel()"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M18 8A6 6 0 1 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M13.73 21a2 2 0 0 1-3.46 0"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
     <!-- Kiosk mode button -->
-    <button class="kiosk-mode-button" aria-label="Enable kiosk mode" (click)="toggleKioskMode()">
-      <svg  viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
-        <path d="M19,2H5A3,3,0,0,0,2,5V15a3,3,0,0,0,3,3H7.64l-.58,1a2,2,0,0,0,0,2,2,2,0,0,0,1.75,1h6.46A2,2,0,0,0,17,21a2,2,0,0,0,0-2l-.59-1H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2ZM8.77,20,10,18H14l1.2,2ZM20,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V14H20Zm0-3H4V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z"></path>
+    <button
+      class="kiosk-mode-button"
+      aria-label="Enable kiosk mode"
+      (click)="toggleKioskMode()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+        <path
+          d="M19,2H5A3,3,0,0,0,2,5V15a3,3,0,0,0,3,3H7.64l-.58,1a2,2,0,0,0,0,2,2,2,0,0,0,1.75,1h6.46A2,2,0,0,0,17,21a2,2,0,0,0,0-2l-.59-1H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2ZM8.77,20,10,18H14l1.2,2ZM20,15a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V14H20Zm0-3H4V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z"
+        ></path>
       </svg>
     </button>
 

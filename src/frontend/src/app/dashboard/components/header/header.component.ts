@@ -1,4 +1,10 @@
-import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { KioskModeService } from '../../services/kiosk-mode.service';
 
@@ -14,6 +20,8 @@ export class HeaderComponent {
   
   isUserPanelOpen = false;
   isSearchPanelOpen = false;
+  isNotificationsPanelOpen = false;
+  isNewPanelOpen = false;
 
   @ViewChild('userPanel') userPanel!: ElementRef;
   @ViewChild('userDropdownToggle') userDropdownToggle!: ElementRef;
@@ -38,6 +46,14 @@ export class HeaderComponent {
 
   toggleKioskMode(): void {
     this.kioskModeService.toggle();
+  }
+
+  toggleNotificationsPanel(): void {
+    this.isNotificationsPanelOpen = !this.isNotificationsPanelOpen;
+  }
+
+  toggleNewPanel(): void {
+    this.isNewPanelOpen = !this.isNewPanelOpen;
   }
 
   @HostListener('window:resize')
@@ -66,13 +82,31 @@ export class HeaderComponent {
     // Handle search panel click outside
     if (this.isSearchPanelOpen) {
       const searchContainer = document.querySelector('.search-container');
-      const clickedInsideSearchContainer = 
-        searchContainer && event.target instanceof Node && 
+      const clickedInsideSearchContainer =
+        searchContainer &&
+        event.target instanceof Node &&
         searchContainer.contains(event.target);
 
       // Close search panel if click is outside the entire search container
       if (!clickedInsideSearchContainer) {
         this.closeSearchPanel();
+      }
+    }
+
+    // Handle new panel click outside
+    if (this.isNewPanelOpen) {
+      const newPanel = document.querySelector('.new-panel');
+      const newDropdownToggle = document.querySelector('.new-dropdown-toggle');
+
+      const clickedInsideNewPanel =
+        newPanel && event.target instanceof Node && newPanel.contains(event.target);
+      const clickedInsideNewToggle =
+        newDropdownToggle &&
+        event.target instanceof Node &&
+        newDropdownToggle.contains(event.target);
+
+      if (!clickedInsideNewPanel && !clickedInsideNewToggle) {
+        this.isNewPanelOpen = false;
       }
     }
   }
