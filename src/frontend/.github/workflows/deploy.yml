@@ -29,3 +29,5 @@ jobs:
         with:
           branch: gh-pages
           folder: dist/frontend
+          # Добавляем repository-name для правильного деплоя
+          repository-name: crdlts/mws-ai
