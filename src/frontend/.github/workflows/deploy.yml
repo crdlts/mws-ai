@@ -13,24 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js 20
+      - name: Use Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 18
 
       - name: Install dependencies
-        run: |
-          npm config set strict-ssl false
-          npm install
+        run: npm install
 
       - name: Build Angular app
-        run: |
-          npm run build || npx ng build --base-href="/mws-ai/"
-
-      - name: Check build output
-        run: |
-          ls -la dist/
-          find dist/ -type f -name "index.html" | head -n 5
+        run: npm run build -- --base-href="/mws-ai/"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
