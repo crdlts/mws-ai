@@ -250,10 +250,15 @@
   margin-right: 12px;
   position: relative;
   transition: background 0.15s ease;
-  gap: 4px;
 
   &:hover {
     background: rgba(51, 65, 85, 0.7);
+  }
+
+  .icon-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .plus-icon-container {
@@ -560,10 +565,11 @@
   }
 }
 
-// Tooltip styles for home icon link, notifications button and kiosk mode button
+// Tooltip styles for home icon link, notifications button, kiosk mode button and new dropdown toggle
 .home-icon-link,
 .header-inform-dropdown-toggle,
-.kiosk-mode-button {
+.kiosk-mode-button,
+.new-dropdown-toggle {
   position: relative;
   display: inline-block;
 }
@@ -571,7 +577,8 @@
 /* Tooltip - common parameters */
 .home-icon-link::after,
 .header-inform-dropdown-toggle::after,
-.kiosk-mode-button::after {
+.kiosk-mode-button::after,
+.new-dropdown-toggle::after {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -603,9 +610,14 @@
   content: 'Enable kiosk mode';
 }
 
+.new-dropdown-toggle::after {
+  content: 'New';
+}
+
 /* Show on hover */
 .home-icon-link:hover::after,
 .header-inform-dropdown-toggle:hover::after,
-.kiosk-mode-button:hover::after {
+.kiosk-mode-button:hover::after,
+.new-dropdown-toggle:hover::after {
   opacity: 1;
 }
