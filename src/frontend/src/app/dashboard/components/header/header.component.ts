@@ -1,5 +1,6 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { KioskModeService } from '../../services/kiosk-mode.service';
 
 @Component({
   selector: 'app-header',
@@ -9,11 +10,10 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
 })
 export class HeaderComponent {
+  kioskModeService = inject(KioskModeService);
+  
   isUserPanelOpen = false;
   isSearchPanelOpen = false;
-  isKioskMode = false;
-  isKioskNotificationVisible = false;
-  private kioskNotificationTimeout: any;
 
   @ViewChild('userPanel') userPanel!: ElementRef;
   @ViewChild('userDropdownToggle') userDropdownToggle!: ElementRef;
@@ -37,43 +37,7 @@ export class HeaderComponent {
   }
 
   toggleKioskMode(): void {
-    this.isKioskMode = !this.isKioskMode;
-    
-    if (this.isKioskMode) {
-      // Enter kiosk mode
-      // Notification will be shown after a short delay to ensure kiosk mode is fully activated
-      setTimeout(() => {
-        this.showKioskNotification();
-      }, 100);
-    } else {
-      // Exit kiosk mode
-      this.hideKioskNotification();
-    }
-  }
-
-  showKioskNotification(): void {
-    // Clear any existing timeout
-    if (this.kioskNotificationTimeout) {
-      clearTimeout(this.kioskNotificationTimeout);
-    }
-    
-    // Show the notification
-    this.isKioskNotificationVisible = true;
-    
-    // Hide the notification after 3 seconds
-    this.kioskNotificationTimeout = setTimeout(() => {
-      this.hideKioskNotification();
-    }, 3000);
-  }
-
-  hideKioskNotification(): void {
-    this.isKioskNotificationVisible = false;
-    
-    // Clear any existing timeout
-    if (this.kioskNotificationTimeout) {
-      clearTimeout(this.kioskNotificationTimeout);
-      this.kioskNotificationTimeout = null;
-    }
+    this.kioskModeService.toggle();
   }
 
   @HostListener('window:resize')
@@ -110,23 +74,6 @@ export class HeaderComponent {
       if (!clickedInsideSearchContainer) {
         this.closeSearchPanel();
       }
-    }
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscapeKey(): void {
-    if (this.isSearchPanelOpen) {
-      this.closeSearchPanel();
-    }
-    
-    // Exit kiosk mode if active
-    if (this.isKioskMode) {
-      this.toggleKioskMode();
-    }
-    
-    // Hide kiosk notification if visible
-    if (this.isKioskNotificationVisible) {
-      this.hideKioskNotification();
     }
   }
 }

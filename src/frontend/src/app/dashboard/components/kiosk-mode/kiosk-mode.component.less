@@ -1,0 +1,58 @@
+// Kiosk mode notification
+.kiosk-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  transform: translateX(20px) translateY(20px);
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 12px 16px;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.kiosk-notification-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-icon {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  color: #e5e7eb;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  
+  &:hover {
+    background: rgba(51, 65, 85, 0.7);
+    color: #e5e7eb;
+  }
+}
