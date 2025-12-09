@@ -1,3 +1,5 @@
-<app-header></app-header>
+<app-header [class.hidden]="kioskModeService.isKioskMode()">nenen</app-header>
 
 <!-- Main page content -->
+
+<app-kiosk-mode></app-kiosk-mode>
