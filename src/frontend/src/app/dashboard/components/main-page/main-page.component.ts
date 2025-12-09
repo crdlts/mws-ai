@@ -7,10 +7,10 @@ import { KioskModeComponent } from '../kiosk-mode/kiosk-mode.component';
   selector: 'app-main-page',
   templateUrl: './main-page.component.html',
   styleUrls: ['./main-page.component.less'],
-  imports: [HeaderComponent, KioskModeComponent]
+  imports: [HeaderComponent, KioskModeComponent],
 })
 export class MainPageComponent {
   kioskModeService = inject(KioskModeService);
-  
-  constructor() { }
+
+  constructor() {}
 }
