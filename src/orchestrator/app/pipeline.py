@@ -4,6 +4,10 @@ from .models import Task
 from .storage import storage
 from .clients import moderator_client, report_injestor_client
 
+import logging
+import json
+
+logger = logging.getLogger("orchestrator.pipeline")
 
 async def run_pipeline_for_task(task: Task) -> None:
     task.set_status("in_progress")
@@ -46,9 +50,15 @@ async def run_pipeline_for_task(task: Task) -> None:
         moderator_payload: Dict[str, Any] = {
             # если report_injestor вернул source — можем использовать его;
             # иначе оставим старый task.source (например 'gitleaks', 'semgrep' и т.п.)
+            "report_id": task.id,
             "source": normalized.get("source") or task.source,
             "findings": moderator_findings,
         }
+
+        logger.info(
+            "Calling moderator with payload: %s",
+            json.dumps(moderator_payload, ensure_ascii=False),
+        )
 
         moderation = await moderator_client.analyze(moderator_payload)
 

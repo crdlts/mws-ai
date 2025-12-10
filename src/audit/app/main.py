@@ -39,6 +39,11 @@ async def append_log(event: LogEvent) -> None:
             f.write(line + "\n")
 
 
+@app.get("/health")  # 👈 Добавить health endpoint
+async def health():
+    return {"status": "ok", "service": "audit"}
+
+
 @app.post("/audit/log")
 async def write_log(event: LogEvent):
     try:

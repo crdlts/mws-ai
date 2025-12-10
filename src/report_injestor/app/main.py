@@ -71,6 +71,10 @@ def create_app() -> FastAPI:
 
         return response
 
+    @app.get("/health")  # 👈 Добавить health endpoint
+    async def health():
+        return {"status": "ok", "service": "report_ingestor"}
+
     app.include_router(api_router)
     return app
 
