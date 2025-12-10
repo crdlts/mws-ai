@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ==================== AUDIT SERVICE ====================
+  audit:
+    build:
+      context: .
+      dockerfile: src/audit/Dockerfile
+    container_name: mws-audit
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=false
+    networks:
+      - mws-network
+    restart: unless-stopped
+    # Убрал healthcheck временно для отладки
+    volumes:
+      - ./logs:/app/logs
+
+  # ==================== MODERATOR SERVICE ====================
+  moderator:
+    build:
+      context: .
+      dockerfile: src/moderator/Dockerfile
+    container_name: mws-moderator
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=false
+      - AUDIT_URL=http://audit:8003
+      - QWEN_API_KEY=${QWEN_API_KEY:-IuHedPt4UeaL}
+    networks:
+      - mws-network
+    depends_on:
+      - audit
+    restart: unless-stopped
+
+  # ==================== REPORT INJECTOR SERVICE ====================
+  report-injector:
+    build:
+      context: .
+      dockerfile: src/report_injestor/Dockerfile
+    container_name: mws-report-injector
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=false
+      - AUDIT_URL=http://audit:8003
+    networks:
+      - mws-network
+    depends_on:
+      - audit
+    restart: unless-stopped
+
+  # ==================== ORCHESTRATOR SERVICE ====================
+  orchestrator:
+    build:
+      context: .
+      dockerfile: src/orchestrator/Dockerfile
+    container_name: mws-orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=false
+      - AUDIT_URL=http://audit:8003
+      - MODERATOR_URL=http://moderator:8001
+      - REPORT_INJESTOR_URL=http://report-injector:8002
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-d4MVEyv61YKQpPL9vj01}
+      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS:-24}
+    networks:
+      - mws-network
+    depends_on:
+      - audit
+      - moderator
+      - report-injector
+    restart: unless-stopped
+
+# ==================== NETWORKS ====================
+networks:
+  mws-network:
+    driver: bridge
+    name: mws-network

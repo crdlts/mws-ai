@@ -1,8 +1,8 @@
 import uuid
 import logging
-from typing import Optional
+from typing import Optional, Dict  # 👈 Dict сюда
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Request, Depends  # 👈 Depends сюда
 
 from .config import settings
 from .schemas import AnalyzeRequest, AnalyzeResponse, TaskStatusResponse
@@ -10,7 +10,9 @@ from .models import Task
 from .storage import storage
 from .pipeline import run_pipeline_for_task
 
-from common.audit_client import AuditClient  # 👈 общий клиент
+from common.audit_client import AuditClient
+from common.jwt_auth import verify_jwt_token, JWTHandler
+
 
 logging.basicConfig(
     level=logging.INFO,  # показывать INFO и выше
@@ -60,11 +62,19 @@ async def health(request: Request):
     return {"status": "ok", "service": settings.PROJECT_NAME}
 
 
+@app.post("/api/token")
+async def get_token():
+    """Получить JWT токен для авторизации"""
+    token = JWTHandler.create_token({"sub": "api-client"})
+    return {"access_token": token, "token_type": "bearer"}
+
+
 @app.post("/api/analyze", response_model=AnalyzeResponse)
 async def analyze_endpoint(
     request: Request,
     body: AnalyzeRequest,
     background_tasks: BackgroundTasks,
+    token: Dict = Depends(verify_jwt_token),
 ):
     trace_id: Optional[str] = getattr(request.state, "trace_id", None)
     report_id = str(uuid.uuid4())
@@ -123,7 +133,7 @@ async def analyze_endpoint(
 
 
 @app.get("/api/reports/{report_id}", response_model=TaskStatusResponse)
-async def get_report(report_id: str, request: Request):
+async def get_report(report_id: str, request: Request, token: Dict = Depends(verify_jwt_token)):
     trace_id: Optional[str] = getattr(request.state, "trace_id", None)
 
     logger.info(

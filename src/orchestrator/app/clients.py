@@ -1,7 +1,9 @@
 from typing import Any, Dict
 import httpx
 from .config import settings
+import logging
 
+logger = logging.getLogger("orchestrator.moderator_client")
 
 class ModeratorClient:
     """
@@ -15,9 +17,18 @@ class ModeratorClient:
     async def analyze(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/moderate"
         async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(url, json=payload)
-            resp.raise_for_status()
-            return resp.json()
+            try:
+                resp = await client.post(url, json=payload)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "Error calling moderator %s: status=%s, body=%s",
+                    url,
+                    e.response.status_code,
+                    e.response.text,
+                )
+                raise
 
 
 class ReportInjestorClient:
