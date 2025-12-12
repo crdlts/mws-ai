@@ -3,24 +3,22 @@ set -euo pipefail
 
 SCANNER=${SCANNER:-gitleaks}
 ORCH_URL=${ORCH_URL:-http://localhost:8000}
-
-# Функция ретраев
-retry() {
-  local cmd=$1
-  local attempts=${2:-5}
-  local sleep_s=${3:-2}
-  for i in $(seq 1 "$attempts"); do
-    if eval "$cmd"; then
-      return 0
-    fi
-    echo "Retry $i/$attempts failed, sleep ${sleep_s}s"
-    sleep "$sleep_s"
-  done
-  return 1
-}
+RETRY_MAX=60
+RETRY_SLEEP=2
 
 echo "[wait] checking orchestrator health at $ORCH_URL/health"
-retry "curl -fsS $ORCH_URL/health > /dev/null" 30 2
+for i in $(seq 1 "$RETRY_MAX"); do
+  if curl -fsS "$ORCH_URL/health" >/dev/null; then
+    echo "[wait] orchestrator is up"
+    break
+  fi
+  echo "Retry $i/$RETRY_MAX..."
+  sleep "$RETRY_SLEEP"
+  if [ "$i" -eq "$RETRY_MAX" ]; then
+    echo "Orchestrator not reachable at $ORCH_URL/health"
+    exit 1
+  fi
+done
 
 # 1) Сканер -> SARIF
 if [ "$SCANNER" = "gitleaks" ]; then
@@ -34,22 +32,43 @@ else
   exit 2
 fi
 
-# 2) Токен
-retry 'TOKEN=$(curl -fsS -X POST "$ORCH_URL/api/token" | jq -r .access_token)'
+# 2) Токен (с ретраем)
+TOKEN=""
+for i in $(seq 1 5); do
+  if TOKEN=$(curl -fsS -X POST "$ORCH_URL/api/token" | jq -r .access_token); then
+    break
+  fi
+  sleep 2
+done
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+  echo "Failed to get token"
+  exit 1
+fi
 
-# 3) Отправить отчёт
-REPORT=$(cat "$REPORT_FILE" | jq -c .)
-retry 'RESP=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"tool\":\"'"$SCANNER"'\",\"report\":'"$REPORT"'}" \
-  "$ORCH_URL/api/analyze")'
-echo "$RESP" > analyze.json
-REPORT_ID=$(jq -r .report_id analyze.json)
+# 3) Собрать payload через jq и отправить
+PAYLOAD=$(mktemp)
+jq -c --arg tool "$SCANNER" --slurpfile rpt "$REPORT_FILE" '{tool:$tool, report:$rpt[0]}' > "$PAYLOAD"
+
+REPORT_ID=""
+for i in $(seq 1 5); do
+  if curl -fsS -H "Authorization: Bearer $TOKEN" \
+       -H "Content-Type: application/json" \
+       --data @"$PAYLOAD" \
+       "$ORCH_URL/api/analyze" -o analyze.json; then
+    REPORT_ID=$(jq -r .report_id analyze.json)
+    [ -n "$REPORT_ID" ] && [ "$REPORT_ID" != "null" ] && break
+  fi
+  sleep 2
+done
+rm -f "$PAYLOAD"
+if [ -z "$REPORT_ID" ] || [ "$REPORT_ID" = "null" ]; then
+  echo "Failed to submit report"
+  exit 1
+fi
 
 # 4) Поллинг
 for i in {1..30}; do
-  STATUS=$(curl -fsS -H "Authorization: Bearer $TOKEN" "$ORCH_URL/api/reports/$REPORT_ID")
-  echo "$STATUS" > status.json
+  curl -fsS -H "Authorization: Bearer $TOKEN" "$ORCH_URL/api/reports/$REPORT_ID" -o status.json
   state=$(jq -r .status status.json)
   if [ "$state" = "completed" ] || [ "$state" = "failed" ]; then break; fi
   sleep 2
