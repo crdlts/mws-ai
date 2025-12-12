@@ -4,7 +4,25 @@ set -euo pipefail
 SCANNER=${SCANNER:-gitleaks}
 ORCH_URL=${ORCH_URL:-http://localhost:8000}
 
-# 1) Запустить сканер → SARIF
+# Функция ретраев
+retry() {
+  local cmd=$1
+  local attempts=${2:-5}
+  local sleep_s=${3:-2}
+  for i in $(seq 1 "$attempts"); do
+    if eval "$cmd"; then
+      return 0
+    fi
+    echo "Retry $i/$attempts failed, sleep ${sleep_s}s"
+    sleep "$sleep_s"
+  done
+  return 1
+}
+
+echo "[wait] checking orchestrator health at $ORCH_URL/health"
+retry "curl -fsS $ORCH_URL/health > /dev/null" 30 2
+
+# 1) Сканер -> SARIF
 if [ "$SCANNER" = "gitleaks" ]; then
   gitleaks detect --report-format sarif --report-path gitleaks.sarif || true
   REPORT_FILE=gitleaks.sarif
@@ -12,25 +30,25 @@ elif [ "$SCANNER" = "semgrep" ]; then
   semgrep ci --sarif --output semgrep.sarif || true
   REPORT_FILE=semgrep.sarif
 else
-  echo "Неизвестный SCANNER=$SCANNER" >&2
+  echo "Unknown SCANNER=$SCANNER" >&2
   exit 2
 fi
 
-# 2) Получить токен
-TOKEN=$(curl -s -X POST "$ORCH_URL/api/token" | jq -r .access_token)
+# 2) Токен
+retry 'TOKEN=$(curl -fsS -X POST "$ORCH_URL/api/token" | jq -r .access_token)'
 
 # 3) Отправить отчёт
 REPORT=$(cat "$REPORT_FILE" | jq -c .)
-RESP=$(curl -s -H "Authorization: Bearer $TOKEN" \
+retry 'RESP=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"tool\":\"$SCANNER\",\"report\":$REPORT}" \
-  "$ORCH_URL/api/analyze")
+  -d "{\"tool\":\"'"$SCANNER"'\",\"report\":'"$REPORT"'}" \
+  "$ORCH_URL/api/analyze")'
 echo "$RESP" > analyze.json
 REPORT_ID=$(jq -r .report_id analyze.json)
 
 # 4) Поллинг
 for i in {1..30}; do
-  STATUS=$(curl -s -H "Authorization: Bearer $TOKEN" "$ORCH_URL/api/reports/$REPORT_ID")
+  STATUS=$(curl -fsS -H "Authorization: Bearer $TOKEN" "$ORCH_URL/api/reports/$REPORT_ID")
   echo "$STATUS" > status.json
   state=$(jq -r .status status.json)
   if [ "$state" = "completed" ] || [ "$state" = "failed" ]; then break; fi
