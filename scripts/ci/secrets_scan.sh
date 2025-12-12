@@ -32,39 +32,35 @@ else
   exit 2
 fi
 
-# 2) Токен (с ретраем)
-TOKEN=""
-for i in $(seq 1 5); do
-  if TOKEN=$(curl -fsS -X POST "$ORCH_URL/api/token" | jq -r .access_token); then
-    break
-  fi
-  sleep 2
-done
-if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-  echo "Failed to get token"
+# Проверить, что файл валидный JSON
+jq -e . "$REPORT_FILE" >/dev/null
+
+# 2) Токен (с выводом ошибки при фейле)
+HTTP_CODE=$(curl -s -o token.json -w "%{http_code}" -X POST "$ORCH_URL/api/token")
+if [ "$HTTP_CODE" != "200" ]; then
+  echo "Token request failed HTTP $HTTP_CODE"
+  cat token.json
   exit 1
 fi
+TOKEN=$(jq -r .access_token token.json)
 
-# 3) Собрать payload через jq и отправить
+# 3) Собрать payload и отправить (показываем тело ошибки при 4xx/5xx)
 PAYLOAD=$(mktemp)
-jq -c --arg tool "$SCANNER" --slurpfile rpt "$REPORT_FILE" '{tool:$tool, report:$rpt[0]}' > "$PAYLOAD"
+jq -c --arg tool "$SCANNER" '{tool:$tool, report:.}' "$REPORT_FILE" > "$PAYLOAD"
 
-REPORT_ID=""
-for i in $(seq 1 5); do
-  if curl -fsS -H "Authorization: Bearer $TOKEN" \
-       -H "Content-Type: application/json" \
-       --data @"$PAYLOAD" \
-       "$ORCH_URL/api/analyze" -o analyze.json; then
-    REPORT_ID=$(jq -r .report_id analyze.json)
-    [ -n "$REPORT_ID" ] && [ "$REPORT_ID" != "null" ] && break
-  fi
-  sleep 2
-done
+HTTP_CODE=$(curl -s -o analyze.json -w "%{http_code}" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  --data @"$PAYLOAD" \
+  "$ORCH_URL/api/analyze")
 rm -f "$PAYLOAD"
-if [ -z "$REPORT_ID" ] || [ "$REPORT_ID" = "null" ]; then
-  echo "Failed to submit report"
+
+if [ "$HTTP_CODE" != "200" ]; then
+  echo "Analyze failed HTTP $HTTP_CODE"
+  cat analyze.json
   exit 1
 fi
+REPORT_ID=$(jq -r .report_id analyze.json)
 
 # 4) Поллинг
 for i in {1..30}; do
