@@ -3,8 +3,6 @@ set -euo pipefail
 
 SCANNER=${SCANNER:-gitleaks}
 ORCH_URL=${ORCH_URL:-http://localhost:8000}
-SCAN_DIR=${SCAN_DIR:-.}
-REPORT_DIR=${REPORT_DIR:-.}
 RETRY_MAX=60
 RETRY_SLEEP=2
 
@@ -24,11 +22,11 @@ done
 
 # 1) Сканер -> SARIF
 if [ "$SCANNER" = "gitleaks" ]; then
-  REPORT_FILE="$REPORT_DIR/gitleaks.sarif"
-  gitleaks detect --source "$SCAN_DIR" --report-format sarif --report-path "$REPORT_FILE" || true
+  gitleaks detect --report-format sarif --report-path gitleaks.sarif || true
+  REPORT_FILE=gitleaks.sarif
 elif [ "$SCANNER" = "semgrep" ]; then
-  REPORT_FILE="$REPORT_DIR/semgrep.sarif"
-  (cd "$SCAN_DIR" && semgrep ci --sarif --output "$REPORT_FILE") || true
+  semgrep ci --sarif --output semgrep.sarif || true
+  REPORT_FILE=semgrep.sarif
 else
   echo "Unknown SCANNER=$SCANNER" >&2
   exit 2
@@ -37,7 +35,7 @@ fi
 # Проверить, что файл валидный JSON
 jq -e . "$REPORT_FILE" >/dev/null
 
-# 2) Токен
+# 2) Токен (с выводом ошибки при фейле)
 HTTP_CODE=$(curl -s -o token.json -w "%{http_code}" -X POST "$ORCH_URL/api/token")
 if [ "$HTTP_CODE" != "200" ]; then
   echo "Token request failed HTTP $HTTP_CODE"
@@ -46,7 +44,7 @@ if [ "$HTTP_CODE" != "200" ]; then
 fi
 TOKEN=$(jq -r .access_token token.json)
 
-# 3) Отправить отчёт
+# 3) Собрать payload и отправить (показываем тело ошибки при 4xx/5xx)
 PAYLOAD=$(mktemp)
 jq -c --arg tool "$SCANNER" '{tool:$tool, report:.}' "$REPORT_FILE" > "$PAYLOAD"
 
