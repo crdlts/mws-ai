@@ -116,6 +116,9 @@ logs/
 # Testing
 testing/
 
+# Models
+models/
+
 # Node (для frontend)
 node_modules/
 dist/
