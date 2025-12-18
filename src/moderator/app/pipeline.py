@@ -1,13 +1,18 @@
+import os
 from typing import List
 from .schemas import Finding, ModerationResult
 from .heuristics import evaluate_finding
-from .ml_model import CatBoostModel
+from .onnx_model import CharCNNOnnxModel as CharCNNModel
 from .llm_detector import QwenLLM
+
+CNN_THRESHOLD = float(os.getenv("CNN_THRESHOLD", "0.45"))        # порог по FP score
+UNCERT_LOW = float(os.getenv("CNN_UNCERT_LOW", "0.30"))
+UNCERT_HIGH = float(os.getenv("CNN_UNCERT_HIGH", "0.70"))
 
 
 class ModeratorPipeline:
-    def __init__(self, catboost_model: CatBoostModel, llm: QwenLLM):
-        self.catboost_model = catboost_model
+    def __init__(self, cnn_model: CharCNNModel, llm: QwenLLM):
+        self.cnn_model = cnn_model
         self.llm = llm
 
     async def process_findings(self, findings: List[Finding]) -> List[ModerationResult]:
@@ -16,7 +21,7 @@ class ModeratorPipeline:
         for f in findings:
             heur = evaluate_finding(f)
 
-            # Если эвристика уверена, что это FP — сразу возвращаем
+            # 1) если эвристика уже уверена, что FP — как и раньше
             if heur.is_false_positive:
                 results.append(
                     ModerationResult(
@@ -29,54 +34,19 @@ class ModeratorPipeline:
                 )
                 continue
 
-            # ---- ФИЧИ ДЛЯ CATBOOST (как в трейне) ----
-
-            path = f.path or ""
-            key = f.key or "unknown_rule"
+            # 2) CNN работает ТОЛЬКО по candidate=value (как в обучении)
             value = f.value or ""
-            context = f.context or ""
+            prob_tp = self.cnn_model.predict_prob_tp(value)
+            fp_score = 1.0 - prob_tp
 
-            # ruleId берём из key
-            rule_id = key
+            heur.fp_score = fp_score
+            heur.reasons.append(f"cnn_prob_tp={prob_tp:.3f}")
+            heur.reasons.append(f"cnn_fp_score={fp_score:.3f}")
 
-            # длина значения секрета
-            length = len(value)
+            heur.is_false_positive = fp_score >= CNN_THRESHOLD
 
-            # энтропия уже посчитана эвристикой
-            entropy = heur.entropy
-
-            # признак "есть fp-ключевые слова" в контексте/значении
-            fp_keywords = ["todo", "fixme", "dummy", "example", "sample", "test", "fake"]
-            text_for_fp = f"{context} {value}".lower()
-            has_fp_keyword = int(any(kw in text_for_fp for kw in fp_keywords))
-
-            # признак "секрет в тестовом/моковом пути"
-            test_markers = ["test", "tests", "/__tests__", "fixtures", "mock"]
-            in_test_path = int(any(m in path.lower() for m in test_markers))
-
-            # snippet = context + value (как ты сказал)
-            snippet = f"{context} {value}".strip()
-
-            features = {
-                "ruleId": rule_id,
-                "length": length,
-                "entropy": entropy,
-                "has_fp_keyword": has_fp_keyword,
-                "in_test_path": in_test_path,
-                "snippet": snippet,
-            }
-
-            # ---- вызов ML-модели ----
-
-            ml_res = self.catboost_model.predict_one(features)
-            ml_prob = ml_res.get("prob", 0.5)
-
-            heur.fp_score = ml_prob
-            heur.reasons.append(f"ml_prob={ml_prob:.3f}")
-            heur.is_false_positive = ml_prob >= 0.5
-
-            # зона неопределённости — подключаем LLM
-            if 0.35 < ml_prob < 0.65:
+            # 3) зона неопределенности -> LLM (лучше оставлять)
+            if UNCERT_LOW < fp_score < UNCERT_HIGH:
                 llm_res = await self.llm.classify(
                     secret=f.value,
                     file_path=f.path,
@@ -85,8 +55,14 @@ class ModeratorPipeline:
                 verdict = llm_res.get("verdict", "TP")
                 llm_conf = float(llm_res.get("confidence", 0.5))
 
-                heur.fp_score = (ml_prob + llm_conf) / 2
-                heur.is_false_positive = verdict == "FP"
+                # аккуратное объединение:
+                # prob_tp_final = avg(prob_tp, llm_prob_tp)
+                llm_prob_tp = llm_conf if verdict == "TP" else (1.0 - llm_conf)
+                prob_tp_final = 0.5 * prob_tp + 0.5 * llm_prob_tp
+                fp_score = 1.0 - prob_tp_final
+
+                heur.fp_score = fp_score
+                heur.is_false_positive = fp_score >= CNN_THRESHOLD
                 heur.reasons.append(f"llm={verdict},conf={llm_conf:.2f}")
 
             results.append(
