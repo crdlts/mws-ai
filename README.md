@@ -36,6 +36,7 @@ docker compose up -d
 `bash
 TOKEN=
 `
+
 2) Отправить SARIF/JSON:
 `bash
 curl -s -X POST http://localhost:8000/api/analyze \
