@@ -1,5 +1,7 @@
 # Secrets Moderation Pipeline
 
+![Secrets Moderation Pipeline](./logo.png)
+
 ## Overview
 - Пайплайн принимает отчёты сканеров секретов (SARIF/JSON: gitleaks, semgrep и др.), приводит их к единому формату и запускает модерацию, чтобы отфильтровать ложные срабатывания.
 - Сервисы: orchestrator (FastAPI, выдаёт JWT, ставит задачи, вызывает нормализацию и модерацию), 
