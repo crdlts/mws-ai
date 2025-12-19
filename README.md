@@ -1,6 +1,8 @@
 # Secrets Moderation Pipeline
 
-![Secrets Moderation Pipeline](./logo.png)
+<p align="center">
+  <img src="./logo.png" alt="Secrets Moderation Pipeline logo" width="260" />
+</p>
 
 ## Overview
 - Пайплайн принимает отчёты сканеров секретов (SARIF/JSON: gitleaks, semgrep и др.), приводит их к единому формату и запускает модерацию, чтобы отфильтровать ложные срабатывания.
