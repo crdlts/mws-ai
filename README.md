@@ -36,7 +36,6 @@ docker compose up -d
 `bash
 TOKEN=
 `
-
 2) Отправить SARIF/JSON:
 `bash
 curl -s -X POST http://localhost:8000/api/analyze \
@@ -44,14 +43,11 @@ curl -s -X POST http://localhost:8000/api/analyze \
   -H "Content-Type: application/json" \
   -d ""
 `
-
 Ответ вернёт report_id.
-
 3)Поллинг статуса:
 `bash
 curl -s -H "Authorization: Bearer " http://localhost:8000/api/reports/<report_id>
 `
-
 4) Для CI есть готовый скрипт scripts/ci/secrets_scan.sh — он ждёт readiness orchestrator, запускает gitleaks/semgrep, отправляет отчёт и выводит сводку.
 
 ### Мониторинг и логи
