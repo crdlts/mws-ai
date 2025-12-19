@@ -44,7 +44,7 @@ curl -s -X POST http://localhost:8000/api/analyze \
   -d ""
 `
 Ответ вернёт report_id.
-3)Поллинг статуса:
+Поллинг статуса:
 `bash
 curl -s -H "Authorization: Bearer " http://localhost:8000/api/reports/<report_id>
 `
