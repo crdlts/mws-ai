@@ -36,7 +36,7 @@ docker compose up -d
 `bash
 TOKEN=
 `
-3) Отправить SARIF/JSON:
+2) Отправить SARIF/JSON:
 `bash
 curl -s -X POST http://localhost:8000/api/analyze \
   -H "Authorization: Bearer " \
@@ -45,7 +45,8 @@ curl -s -X POST http://localhost:8000/api/analyze \
 `
 
 Ответ вернёт report_id.
-2)Поллинг статуса:
+
+3)Поллинг статуса:
 `bash
 curl -s -H "Authorization: Bearer " http://localhost:8000/api/reports/<report_id>
 `
