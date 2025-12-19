@@ -33,12 +33,10 @@ docker compose up -d
 
 ### Отправка отчёта на анализ
 1) Получить токен:
-
 `bash
 TOKEN=
 `
 3) Отправить SARIF/JSON:
-
 `bash
 curl -s -X POST http://localhost:8000/api/analyze \
   -H "Authorization: Bearer " \
@@ -47,11 +45,11 @@ curl -s -X POST http://localhost:8000/api/analyze \
 `
 
 Ответ вернёт report_id.
-Поллинг статуса:
-
+2)Поллинг статуса:
 `bash
 curl -s -H "Authorization: Bearer " http://localhost:8000/api/reports/<report_id>
 `
+
 4) Для CI есть готовый скрипт scripts/ci/secrets_scan.sh — он ждёт readiness orchestrator, запускает gitleaks/semgrep, отправляет отчёт и выводит сводку.
 
 ### Мониторинг и логи
@@ -64,6 +62,7 @@ curl -s -H "Authorization: Bearer " http://localhost:8000/api/reports/<report_id
 `bash
 docker compose down
 `
+
 Добавьте -v, если нужно убрать примонтированные тома/логи.
 
 ### Если ничего не работает
